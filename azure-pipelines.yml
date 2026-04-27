@@ -2,11 +2,11 @@ trigger:
 - main
 
 variables:
-  # Запазваме твоите оригинални данни за ACR
   dockerRegistryServiceConnection: '823b0184-b606-427f-993a-f325de6efe0c'
   imageRepository: 'ahmedosmangsspringbootdocker'
   containerRegistry: 'aosman.azurecr.io'
-  dockerfilePath: '$(Build.SourcesDirectory)/complete/Dockerfile'
+  # Променено: Dockerfile е в главната папка според снимката ти
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
   vmImageName: 'ubuntu-latest'
 
@@ -20,19 +20,17 @@ stages:
       vmImage: $(vmImageName)
     steps:
     
-    # СТЪПКА 1: Компилиране на Java приложението
-    - task: Maven@4
-      displayName: 'Maven Build'
+    - task: Gradle@3
+      displayName: 'Gradle Build'
       inputs:
-        # Увери се, че пътят до pom.xml е правилен!
-        mavenPomFile: 'complete/pom.xml' 
-        goals: 'package'
-        jdkVersionOption: '1.11' # Или твоята версия на Java
+        gradleWrapperFile: 'gradlew'
+        tasks: 'build'
+        publishJUnitResults: true
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.17' # Или '1.11' според твоя проект
 
-    # СТЪПКА 2: Docker Build & Push
-    # Вече в папката target/ има .war файл, който Docker ще вземе
     - task: Docker@2
-      displayName: Build and push an image to container registry
+      displayName: 'Build and push'
       inputs:
         command: buildAndPush
         repository: $(imageRepository)
@@ -40,4 +38,3 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
-          latest
