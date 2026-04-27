@@ -5,7 +5,6 @@ variables:
   dockerRegistryServiceConnection: '823b0184-b606-427f-993a-f325de6efe0c'
   imageRepository: 'ahmedosmangsspringbootdocker'
   containerRegistry: 'aosman.azurecr.io'
-  # Променено: Dockerfile е в главната папка според снимката ти
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
   vmImageName: 'ubuntu-latest'
@@ -20,15 +19,21 @@ stages:
       vmImage: $(vmImageName)
     steps:
     
+    # 1. Фикс за правата на Linux (силно препоръчително)
+    - bash: chmod +x gradlew
+      displayName: 'Fix gradlew permissions'
+
+    # 2. Gradle Build с Java 17 (заради версия 8.6 на Gradle)
     - task: Gradle@3
       displayName: 'Gradle Build'
       inputs:
-        gradleWrapperFile: 'gradlew'
+        gradleWrapperFile: 'gradlew' # Файлът е в корена
         tasks: 'build'
         publishJUnitResults: true
         javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.17' # Или '1.11' според твоя проект
+        jdkVersionOption: '1.17' # ЗАДЪЛЖИТЕЛНО 1.17 за Gradle 8.6
 
+    # 3. Docker Build & Push
     - task: Docker@2
       displayName: 'Build and push'
       inputs:
