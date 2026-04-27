@@ -1,22 +1,13 @@
-# Docker
-# Build and push an image to Azure Container Registry
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
 - main
 
-resources:
-- repo: self
-
 variables:
-  # Container registry service connection established during pipeline creation
+  # Запазваме твоите оригинални данни за ACR
   dockerRegistryServiceConnection: '823b0184-b606-427f-993a-f325de6efe0c'
   imageRepository: 'ahmedosmangsspringbootdocker'
   containerRegistry: 'aosman.azurecr.io'
   dockerfilePath: '$(Build.SourcesDirectory)/complete/Dockerfile'
   tag: '$(Build.BuildId)'
-
-  # Agent VM image name
   vmImageName: 'ubuntu-latest'
 
 stages:
@@ -28,6 +19,18 @@ stages:
     pool:
       vmImage: $(vmImageName)
     steps:
+    
+    # СТЪПКА 1: Компилиране на Java приложението
+    - task: Maven@4
+      displayName: 'Maven Build'
+      inputs:
+        # Увери се, че пътят до pom.xml е правилен!
+        mavenPomFile: 'complete/pom.xml' 
+        goals: 'package'
+        jdkVersionOption: '1.11' # Или твоята версия на Java
+
+    # СТЪПКА 2: Docker Build & Push
+    # Вече в папката target/ има .war файл, който Docker ще вземе
     - task: Docker@2
       displayName: Build and push an image to container registry
       inputs:
@@ -37,3 +40,4 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
+          latest
